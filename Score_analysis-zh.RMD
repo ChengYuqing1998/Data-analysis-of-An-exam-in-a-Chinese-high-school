@@ -1,0 +1,540 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
+SCORES ANAlYSIS
+========================================================
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
+# 加载你最终使用的所有组件
+# 在这个代码块的分析中。
+
+# 注意，在这个代码块中，将参数 "echo" 设为假。
+# This prevents the code from displaying in the knitted HTML output.这可以避免代码混入 HTML 输出显示。
+# 应当在文件中，对所有代码块设为 echo=FALSE 。
+
+library('ggplot2')
+library('GGally')
+library('scales')
+library('memisc')
+library('corrplot')
+```
+
+```{r echo=FALSE, Load_the_Data}
+# 加载数据
+setwd("/Users/chengyuqing/Desktop/Rproject")
+#(在我的计算及上我将该csv文件放在了桌面上，因此需要这行代码)
+df<- read.csv('scores_and_ranks2.csv',TRUE)
+# 修改变量类型
+df$student_id<-as.factor(df$student_id)
+df$class_number<-as.factor(df$class_number)
+```
+
+# 单变量绘图选择
+```{r echo=FALSE, Univariate_Plots}
+#构建新的变量class_category：其中28班是按照10次考试平均成绩的前20名筛选出的，为“Extraordinary”，8，9，10班是按照中考成绩筛选出得优秀学生，为“Key”，其余的班级为正常的班级，即“Normal”。
+df$class_category<-
+  ifelse(df$class_number=='28','Extraordinary',
+         ifelse(df$class_number=='8'|df$class_number=='9'|df$class_number=='10',
+                'Key','Normal'))
+#筛选排除缺考的记录：
+df<-subset(df,df$total_score!=0&df$chinese!=0&df$math!=0&df$english!=0&
+             df$physics!=0&df$chemistry!=0&df$biology!=0)
+```
+
+```{r}
+#画出每科成绩以及总分和理综的频率分布图
+ggplot(aes(x=total_score),data=df)+
+  geom_histogram(stat='bin',bins =30,color=I('black'),fill=I('gray'))+
+  geom_vline(linetype='dashed',color='red',
+             xintercept = quantile(df$total_score,c(0.05,0.95)))
+```
+
+从图中可以看出，总分分布属于正态分布，异常值应存在于340分以下，580分以上。但统计意义上的异常值真实存在。
+
+
+```{r}
+ggplot(aes(x=chinese),data=df)+
+  geom_histogram(stat='bin',bins=30,color=I('black'),fill=I('gray'))+
+  geom_vline(linetype='dashed',color='red',
+             xintercept = quantile(df$chinese,c(0.05,0.95)))
+```
+
+从图中可以看出，语文成绩分布属于正态分布，异常值应存在于75分以下，105分以上。但统计意义上的异常值真实存在。同时语文分布较窄，说明方差较小。
+
+```{r}
+ggplot(aes(x=math),data=df)+
+  geom_histogram(stat='bin',bins =25,color=I('black'),fill=I('gray'))+
+  geom_vline(linetype='dashed',color='red',
+             xintercept = quantile(df$math,c(0.05,0.95)))
+```
+
+从图中可以看出，数学成绩分布属于正态分布，异常值应存在于60分以下，130分以上。但统计意义上的异常值真实存在
+
+```{r}
+ggplot(aes(x=english),data=df)+
+  geom_histogram(stat='bin',bins =28,color=I('black'),fill=I('gray'))+
+  geom_vline(linetype='dashed',color='red',
+             xintercept = quantile(df$english,c(0.05,0.95)))
+
+```
+
+从图中可以看出，英语成绩分布属于正态分布，异常值应存在于63分以下，120分以上。但统计意义上的异常值真实存在。
+
+```{r}
+ggplot(aes(x=science_integrated),data=df)+
+  geom_histogram(stat='bin',bins =25,color=I('black'),fill=I('gray'))+
+  geom_vline(linetype='dashed',color='red',
+             xintercept = quantile(df$science_integrated,c(0.05,0.95)))
+  
+```
+
+从图中可以看出，理综成绩分布属于正态分布，异常值应存在于105分以下，240分以上。但统计意义上的异常值真实存在。
+
+```{r}
+ggplot(aes(x=physics),data=df)+
+  geom_histogram(stat='bin',bins =28,color=I('black'),fill=I('gray'))+
+  geom_vline(linetype='dashed',color='red',
+             xintercept = quantile(df$physics,c(0.05,0.95)))
+```
+
+从图中可以看出，物理成绩分布属于正态分布，异常值应存在于30分以下，90分以上。但统计意义上的异常值真实存在。
+
+```{r}
+ggplot(aes(x=chemistry),data=df)+
+  geom_histogram(stat='bin',bins =30,color=I('black'),fill=I('gray'))+
+  geom_vline(linetype='dashed',color='red',
+             xintercept = quantile(df$chemistry,c(0.05,0.95)))
+```
+
+从图中可以看出，化学成绩分布近似正态分布，异常值应存在于35分以下，88分以上。但统计意义上的异常值真实存在。
+
+```{r}
+ggplot(aes(x=biology),data=df)+
+  geom_histogram(stat='bin',bins =30,color=I('black'),fill=I('gray'))+
+  geom_vline(linetype='dashed',color='red', 
+             xintercept = quantile(df$biology,c(0.05,0.95)))
+```
+
+从图中可以看出，生物成绩分布属于正态分布，异常值应存在于30分以下，70分以上。但统计意义上的异常值真实存在。
+
+```{r}
+ggplot(aes(x=rating),data=df)+
+  geom_bar(stat='count',color=I('black'),fill=I('gray'),width=0.2)
+```
+
+从上图可以看出，不同评级的学生的人数大致相同，D类学生较少的原因可能是因为上面的操作将不少缺考的学生记录（零分）删除了。
+```{r}
+ggplot(aes(x=class_category),data=df)+
+  geom_bar(stat='count',color=I('black'),fill=I('gray'),width = 0.2)
+```
+
+Extraordinary的学生是最少的，仅有约20人，Key的学生人数在160人左右。不同类班级人数的差异的原因是人为选择因素.
+
+```{r}
+#简单汇总数据
+summary(df)
+```
+
+
+
+
+
+# 单变量分析
+
+### 你的数据集结构是什么？
+
+每一个考生id表示一个考生的成绩观察记录结果，每一列代表一个变量，包括的变量有考生id，考生班级，每一科的成绩与年级排名，总分和总分排名，以及理科综合（物理，生物和化学）及其排名。含有1232个观测值和20个变量。
+
+### 你的数据集内感兴趣的主要特性有哪些？
+<br/>
+1.每个科目以及总分的分布是否都近似与正态分布；<br/>
+2.不同学科之间是否彼此间存在相关性;<br/>
+3.不同类班级的总分分布范围是怎样的；<br/>
+4.不同类班级间总分间的差异主要取决于哪一科目；<br/>
+5.不同评级类学生科目成绩的差异是怎样的；<br/>
+6.经验“语文英语好的学生普遍数理差，数理好的学生学不好语文和英语”是否能被证实。<br/>
+
+### 你认为数据集内哪些其他特征可以帮助你探索兴趣特点？
+
+不同科目的具体分数，类别变量rating和class_number、class_category
+
+### 根据数据集内已有变量，你是否创建了任何新变量？
+
+创建了新的变量class_category，方便探究不同类班级成绩的差异。
+
+### 在已经探究的特性中，是否存在任何异常分布？你是否对数据进行一些操作，如清洁、调整或改变数据的形式？如果是，你为什么会这样做？
+   
+   不存在，都近似于正态分布。我清理了不同科目下为零分的成绩记录，因为零分的存在是由于缺考，将这类数据保留可能会对结论的可靠性造成负面影响。
+
+单变量分析总结：<br/>
+1.探究的变量（各科成绩）均近似服从正态分布，因为对成绩具有影响的随机变量特别多，符合中心极限定理。同时也符合我们的日常生活经验，‘学霸’和‘学渣’都是人群中的少数。<br/>
+2.语文的分布特别窄，说明语文成绩的方差较小，符合老师们的经典语录“语文拉不开分”。
+
+
+
+# 双变量绘图选择
+```{r echo=FALSE, Bivariate_Plots}
+```
+
+```{r}
+#绘制单科成绩与总成绩的散点图，观察相关关系
+library('gridExtra')
+g1<-ggplot(aes(x=chinese,y=total_score),data=df) + 
+  geom_point(alpha = 0.5, size = 0.4, position = 'jitter')
+g2<-ggplot(aes(x=math,y=total_score),data=df) + 
+  geom_point(alpha = 0.5, size = 0.4, position = 'jitter')
+g3<-ggplot(aes(x=english,y=total_score),data=df) + 
+  geom_point(alpha = 0.5, size = 0.4, position = 'jitter')
+g4<-ggplot(aes(x=science_integrated,y=total_score),data=df) + 
+  geom_point(alpha = 0.5, size = 0.4, position = 'jitter')
+g5<-ggplot(aes(x=physics,y=total_score),data=df) + 
+  geom_point(alpha = 0.5, size = 0.4, position = 'jitter')
+g6<-ggplot(aes(x=chemistry,y=total_score),data=df) + 
+  geom_point(alpha = 0.5, size = 0.4, position = 'jitter')
+g7<-ggplot(aes(x=biology,y=total_score),data=df) + 
+  geom_point(alpha = 0.5, size = 0.4, position = 'jitter')
+grid.arrange(g1,g2,g3,g4,g5,g6,g7,ncol=2)
+```
+
+从上图可以看出所有的学科成绩均与总分呈现正相关，数理性质的学科与总分之间会有更强的相关性，而语言学科与总分的相关性并没有那么强。
+
+
+```{r}
+#绘制理综成绩与数学、物理、化学的散点图，以及数学与物理的散点图观察相关关系（相关性较强）
+s1<-ggplot(aes(x=math,y=science_integrated),data=df) + 
+  geom_point(alpha=0.5, size = 0.4, position = 'jitter')
+s2<-ggplot(aes(x=math,y=physics),data=df) + 
+  geom_point(alpha=0.5, size = 0.4, position = 'jitter')
+s3<-ggplot(aes(x=physics,y=science_integrated),data=df) + 
+  geom_point(alpha=0.5,size=0.4, position = 'jitter')
+s4<-ggplot(aes(x=chemistry,y=science_integrated),data=df) + 
+  geom_point(alpha=0.5,size=0.4, position = 'jitter')
+grid.arrange(s1,s2,s3,s4)
+
+```
+
+数学和理综学科间的的相关性较强。
+
+```{r}
+#语文和英语（语言学科间的相关性）
+ggplot(aes(x=chinese,y=english),data=df) + 
+  geom_point(alpha = 0.5, size = 0.4, position = 'jitter')
+```
+
+语言学科间的相关性不是很明显。
+
+```{r}
+#两两变量相关系数矩阵
+vars<-c("total_score","chinese","math","english","science_integrated","physics","chemistry","biology")
+relation <- cor(df[vars])
+relation
+```
+
+```{r}
+corrplot(corr = relation)
+```
+
+结合上面的相关系数矩阵和热度图，可以看出语文成绩与总成绩间的关系最弱；理科性质的学科，例如数学和物理对总成绩的相关性最强，其中理科学科与总成绩的相关性最弱的是生物；语文和其他的科目相关性最高的是英语，但是相关系数依然低于0.5。
+
+```{r}
+library('gridExtra')
+j1<-ggplot(aes(x=rating,y=total_score),data=df) + 
+  geom_jitter(alpha = 0.5, size = 0.4, position = 'jitter')
+j2<-ggplot(aes(x=rating,y=chinese),data=df) + 
+  geom_jitter(alpha = 0.5, size = 0.4, position = 'jitter')
+j3<-ggplot(aes(x=rating,y=math),data=df) + 
+  geom_jitter(alpha = 0.5, size = 0.4, position = 'jitter')
+j4<-ggplot(aes(x=rating,y=english),data=df) + 
+  geom_jitter(alpha = 0.5, size = 0.4, position = 'jitter')
+j5<-ggplot(aes(x=rating,y=science_integrated),data=df) + 
+  geom_jitter(alpha = 0.5, size = 0.4, position = 'jitter')
+j6<-ggplot(aes(x=rating,y=physics),data=df) + 
+  geom_jitter(alpha = 0.5, size = 0.4, position = 'jitter')
+j7<-ggplot(aes(x=rating,y=chemistry),data=df) + 
+  geom_jitter(alpha = 0.5, size = 0.4, position = 'jitter')
+j8<-ggplot(aes(x=rating,y=biology),data=df) + 
+  geom_jitter(alpha = 0.5, size = 0.4, position = 'jitter')
+grid.arrange(j1,j2,j3,j4,j5,j6,j7,j8,ncol=2)
+```
+
+```{r}
+library('doBy')
+by(df[vars],df$rating,summary)
+```
+
+结合上面两个chunk的结果，不同评级学生成绩的分布不同，总的来说A>B>C>D,其中语文成绩上四个评级相差不大。
+
+```{r}
+#观察不同类班级的各科成绩的分布
+v1<-ggplot(aes(x=class_category,y=total_score),data=df) + 
+  geom_violin()
+v2<-ggplot(aes(x=class_category,y=chinese),data=df) + 
+  geom_violin()
+v3<-ggplot(aes(x=class_category,y=english),data=df) + 
+  geom_violin()
+v4<-ggplot(aes(x=class_category,y=math),data=df) + 
+  geom_violin()
+v5<-ggplot(aes(x=class_category,y=science_integrated),data=df) + 
+  geom_violin()
+v6<-ggplot(aes(x=class_category,y=physics),data=df) + 
+  geom_violin()
+v7<-ggplot(aes(x=class_category,y=chemistry),data=df) + 
+  geom_violin()
+v8<-ggplot(aes(x=class_category,y=biology),data=df) + 
+  geom_violin()
+grid.arrange(v1,v2,v3,v4,v5,v6,v7,v8,ncol=2)
+```
+
+```{r}
+by(df[vars],df$class_category,summary)
+```
+
+结合上面两个chunk的结果，不同类班级学生成绩的分布不同，总的来说Extraordinary>Key>Normal,同样语文成绩三类班级级相差不大。值得注意的是，三个班各单个科目最高分其实相差不大，差别主要体现在平均值上。
+
+
+# 双变量分析
+
+### 探讨你在这部分探究中观察到的一些关系。这些感兴趣的特性与数据集内其他特性有什么区别？
+在双变量分析中，观察到不同科目间存在的相关性，不同科目成绩间的相关性或强或弱：<br/>
+1.各个科目的成绩都与总成绩呈现不同程度的正相关；<br/>
+2.语文与其他所有科目的相关性都不高；<br/>
+3.数学与物理以及理综间的相关性较强。<br/>
+这些感兴趣的特性将不同的特性联系起来，揭示了特性之间的相关性。
+
+### 你是否观察到主要特性与其他特性之间的有趣关系？
+1.语文成绩与总成绩间的关系最弱；<br/>
+2.理科性质的学科，例如数学和物理对总成绩的相关性最强，其中理科学科与总成绩的相关性最弱的是生物；<br/>
+3.语文和其他的科目相关性最高的是英语，但是相关系数依然低于0.5；<br/>
+4.不同类型的班级的总分分布存在显著差异，extraordinary>key>normal.
+
+### 你发现最强的关系是什么？
+理综和总分的关系，其次就是数学。
+
+
+
+# 多变量绘图选择
+
+```{r echo=FALSE, Multivariate_Plots}
+```
+
+```{r}
+#画出不同评级学生各科成绩的分布（按照班级类型对评级进行再划分）
+t1<-ggplot(aes(x=rating,y=chinese,color=class_category),data=df) + 
+  geom_violin()
+t2<-ggplot(aes(x=rating,y=math,color=class_category),data=df) + 
+  geom_violin()
+t3<-ggplot(aes(x=rating,y=english,color=class_category),data=df) + 
+  geom_violin()
+t4<-ggplot(aes(x=rating,y=science_integrated,color=class_category),data=df) + 
+  geom_violin()
+t5<-ggplot(aes(x=rating,y=physics,color=class_category),data=df) + 
+  geom_violin()
+t6<-ggplot(aes(x=rating,y=chemistry,color=class_category),data=df) + 
+  geom_violin()
+t7<-ggplot(aes(x=rating,y=biology,color=class_category),data=df) + 
+  geom_violin()
+t8<-ggplot(aes(x=rating,y=total_score,color=class_category),data=df) + 
+  geom_violin()
+grid.arrange(t1,t2,t3,t4,t5,t6,t7,t8,ncol=2)
+```
+
+从图中可以看出，Extraordinary的学生全部属于a类评级，整体的趋势还是评级A>B>C>D，在同一评级下，Extraordinary>Key>Normal。
+
+```{r}
+i1<-ggplot(aes(x=rating,y=chinese),data=df)+
+  geom_jitter(aes(color=class_category),alpha=0.7,
+              size=0.4,position=position_jitter(h=0))+
+  scale_color_brewer(type = 'div',palette="Set2")
+i2<-ggplot(aes(x=rating,y=math),data=df)+
+  geom_jitter(aes(color=class_category),alpha=0.7,size=0.4,
+              position=position_jitter(h=0))+
+  scale_color_brewer(type = 'div',palette="Set2")
+i3<-ggplot(aes(x=rating,y=english),data=df)+
+  geom_jitter(aes(color=class_category),alpha=0.7,size=0.4,
+              position=position_jitter(h=0))+
+  scale_color_brewer(type = 'div',palette="Set2")
+i4<-ggplot(aes(x=rating,y=physics),data=df)+
+  geom_jitter(aes(color=class_category),alpha=0.7,size=0.4,
+              position=position_jitter(h=0))+
+  scale_color_brewer(type = 'div',palette="Set2")
+i5<-ggplot(aes(x=rating,y=chemistry),data=df)+
+  geom_jitter(aes(color=class_category),alpha=0.7,size=0.4,
+              position=position_jitter(h=0))+
+  scale_color_brewer(type = 'div',palette="Set2")
+i6<-ggplot(aes(x=rating,y=biology),data=df)+
+  geom_jitter(aes(color=class_category),alpha=0.7,size=0.4,
+              position=position_jitter(h=0))+
+  scale_color_brewer(type = 'div',palette="Set2")
+
+grid.arrange(i1,i2,i3,i4,i5,i6,ncol=2)
+```
+
+此图相较于上图包括了人数的信息（每个点表示一个个体）。两者结论一致。
+
+```{r}
+#以下是对双变量分析中相关性较强的变量间的探究，探究不同评级的学生的这些学科间的相关性存在怎样的差异
+#理综和总分
+ggplot(aes(x=science_integrated,y=total_score),data=df) + 
+  geom_point(aes(color=class_category),alpha=0.5,size=0.8)+geom_smooth(size=0.6)+
+  facet_wrap(~rating,scale='free')
+```
+
+理综与总分之间的相关性在评级为A和D的学生中最显著，在B和C同学的学生中不显著。
+
+```{r}
+#数学和总分
+ggplot(aes(x=math,y=total_score),data=df) + 
+  geom_point(aes(color=class_category),alpha=0.5,size=0.8)+geom_smooth(size=0.6)+
+  facet_wrap(~rating,scale='free')
+```
+
+数学与总分之间的相关性在评级为A和D的学生中最显著，在B和C同学的学生中不显著
+
+```{r}
+#物理和理综
+ggplot(aes(x=physics,y=science_integrated),data=df) + 
+  geom_point(aes(color=class_category),alpha=0.5,size=0.8)+
+  geom_smooth(size=0.6)+facet_wrap(~rating,scale='free')
+```
+
+物理与理综四个评级中都显著，评级A的物理与理综最显著。
+
+```{r}
+#化学和理综
+ggplot(aes(x=chemistry,y=science_integrated),data=df) + 
+  geom_point(aes(color=class_category),alpha=0.5,size=0.8)+geom_smooth(size=0.6)+
+  facet_wrap(~rating,scale='free')
+```
+
+化学与理综的相关性在四个评级中都显著，评级D的化学与理综最显著
+
+```{r}
+#接下来，探讨关键经验问题，语言类学科与数理学科真的对理科生来说是“鱼与熊掌不可兼得”吗？
+#将语言学科和数理学科的成绩加和汇总，探究两者之间的相关性
+ggplot(aes(x=df$chinese+df$english,y=df$math+df$science_integrated),data=df)+
+  geom_point(aes(color=class_category),alpha=0.7,size=1,
+             position=position_jitter(h=0))+
+  facet_wrap(~rating,scale='free')+geom_smooth(size=0.6)
+```
+
+从图中发现了一个很有意思的现象，评级B和C的同学语言成绩与数理成绩出现了明显的负相关，在A与B，D与C类交界的地方也存在负相关。
+
+
+# 多变量分析
+
+###  探讨你在这部分探究中观察到的一些关系。通过观察感兴趣的特性，是否存在相互促进的特性？
+1.Extraordinary所有学生的评级均为A;<br/>
+2.Key班分布的最宽的地方几乎都位与比Normal班最宽部位的上方（小提琴图）；<br/>
+3.不同班，不同评级的学生在语文成绩上的分布差异最小；<br/>
+4.学科之间的相关性会因评级的不同而有所差异。<br/>
+
+存在。
+
+### 这些特性之间是否存在有趣或惊人的联系呢？
+1.数学与总分以及理综与总分之间的相关性在评级为A和D的学生中最显著，在B和C同学的学生中不显著。<br/>
+2.物理与理综和化学与理综的相关性在四个评级中都显著，评级A的物理与理综最显著，评级D的化学与理综最显著。<br/>
+
+
+
+------
+
+# 定稿图与总结
+
+### 绘图一
+```{r echo=FALSE, Plot_One}
+library(gridExtra)
+p1<-ggplot(aes(x=rating,y=chinese),data=df)+
+  geom_jitter(aes(color=class_category),alpha=0.7,size=0.4,
+              position=position_jitter(h=0))+
+  geom_hline(linetype = 'dashed',color ='red',
+             yintercept=quantile(df$chinese,c(0.75,0.5,0.25)))+
+  scale_color_brewer(type = 'div',palette="Set2")
+p2<-ggplot(aes(x=rating,y=math),data=df)+
+  geom_jitter(aes(color=class_category),alpha=0.7,size=0.4,
+              position=position_jitter(h=0))+
+  geom_hline(linetype = 'dashed',color = 'red',
+             yintercept=quantile(df$math,c(0.75,0.5,0.25)))+
+  scale_color_brewer(type = 'div',palette="Set2")
+p3<-ggplot(aes(x=rating,y=english),data=df)+
+  geom_jitter(aes(color=class_category),alpha=0.7,size=0.4,
+              position=position_jitter(h=0))+
+  geom_hline(linetype = 'dashed',color = 'red',
+             yintercept=quantile(df$english,c(0.75,0.5,0.25)))+
+  scale_color_brewer(type = 'div',palette="Set2")
+p5<-ggplot(aes(x=rating,y=physics),data=df)+
+  geom_jitter(aes(color=class_category),alpha=0.7,size=0.4,
+              position=position_jitter(h=0))+
+  geom_hline(linetype = 'dashed',color = 'red',
+             yintercept=quantile(df$physics,c(0.75,0.5,0.25)))+
+  scale_color_brewer(type = 'div',palette="Set2")
+p6<-ggplot(aes(x=rating,y=chemistry),data=df)+
+  geom_jitter(aes(color=class_category),alpha=0.7,size=0.4,
+              position=position_jitter(h=0))+
+  geom_hline(linetype = 'dashed',color = 'red',
+             yintercept=quantile(df$chemistry,c(0.75,0.5,0.25)))+
+  scale_color_brewer(type = 'div',palette="Set2")
+p7<-ggplot(aes(x=rating,y=biology),data=df)+
+  geom_jitter(aes(color=class_category),alpha=0.7,size=0.4,
+              position=position_jitter(h=0))+
+  geom_hline(linetype = 'dashed',color = 'red',
+             yintercept=quantile(df$biology,c(0.75,0.5,0.25)))+
+  scale_color_brewer(type = 'div',palette="Set2")
+
+grid.arrange(p1,p2,p3,p5,p6,p7,ncol=2,widths=c(2,2),
+             top='The Distribution Plots of Each Subject\'s Scores')
+
+```
+
+
+
+### 描述一
+    这幅图显示了不同评级，不同类班级的学生在各科成绩以及总分上的分布。其中红色虚线分别表示，该项成绩的百分之75，百分之50以及百分之25的分位数。
+    从图中可以看出，Extraordinary类班级的成绩分布几乎位于所有科目成绩分布的最上方。Extraordinary与Key班级的学生绝大部分属于评级A。在每科成绩的75%分位线上的C，D类学生很少，这类学生往往属于偏科生。A类学生大部分位于各科成绩的50%的分位数线的上方。不同评级以及不同类班级在成绩上差别最大的单个学科是数学和物理，差异最小的是语文。
+
+### 绘图二
+```{r echo=FALSE, Plot_Two}
+corrplot(corr = relation,mar=c(3,3,1,1),method='color',
+         tl.col='black', order = "hclust",
+         title='Heatmap of the Correlations Among all the Subjects')
+```
+
+### 描述二
+    这幅热图来自于分析图报告中的热图的优化，表示了不同学科间两两的相关系数的大小情况。颜色越深表示，两个学科成绩之间的相关性越强。
+    从图中可以看出，总分与数学和理综的相关性非常强。语文与其他科目的相关性都很差。数理性质比较强的科目之间也存在着不小的相关性。揭示了不同的理科学科背后可能都要求学生具有很类似的数理逻辑能力。
+
+### 绘图三
+```{r echo=FALSE, Plot_Three}
+par(pin=c(30,30))
+ggplot(aes(x=df$chinese+df$english,y=df$math+df$science_integrated),data=df)+
+  geom_point(aes(color=class_category),alpha=0.7,size=1,
+             position=position_jitter(h=0))+
+  facet_wrap(~rating,scale='free')+
+  scale_color_brewer(type = 'div',palette="Set2")+
+  ggtitle("Science VS Language")+ 
+  theme(plot.title = element_text(lineheight=.8, face="bold"))+
+  xlab('Chinese and English Scores')+ylab('Math and Science Scores')+
+  geom_smooth(size=0.5)
+```
+
+
+### 描述三
+    这幅图主要描述了不同评级类学生语言成绩（语文和英语）以及数理成绩（数学和理综）间的相关性；
+    从图中发现了一个很有意思的现象，评级B和C的同学语言成绩与数理成绩出现了明显的负相关，在A与B，D与C类交界的地方也存在负相关。这说明大部分中等学生很难同时把握数理能力和语言能力（也就是存在一定程度的偏科），而这一特点也限制了B，C类学生的成绩，也证实了我们经验“语文英语好的学生普遍数理差，数理好的学生学不好语文和英语”存在一定道理。对于A类学生中的高分段的学生，出现了一定程度正相关，也说明了要想取得高分必须同时掌握这两种能力，尽管有时候这两种能力可能会有些互相冲突的地方。
+------
+
+# 反思
+梗概：<br/>
+该项目，我通过单变量分析确认感兴趣的变量的分布，通过双变量分析确定变量间的相关性水平以及通过多变量分析引入更多的维度分析不同评级，不同类班级会对成绩的分布以及科目之间的相关性产生怎样的影响。意在多方位揭示学科之间的关系，以及理科学生总成绩的差异来源于哪些方面。<br/>
+
+成功与挫折：<br/>
+这次项目的成功之处在于通过单变量分析确认感兴趣的变量的分布，通过双变量分析确定变量间的相关性水平以及通过多变量分析引入更多的维度分析揭示了不同评级，不同类班级会对成绩的分布以及科目之间的相关性产生怎样的影响。这次项目也经受了一些挫折（局限），比如一次考试的成绩可能具有偶然性，相关性的结果可能会受此影响，难以看出并衡量学生的潜力或者竞争力。<br/>
+
+未来的建议和思路：<br/>
+我在以后可以尝试多纳入几次考试的成绩，构成一个时间序列式的数据集，用这种方式来评价一个学生的潜力。也可以针对各科成绩排名构建评级变量，与总评级一起更全面地探究学科间的相关关系。<br/>
+
+重要的决定和产生的影响：<br/>
+1.创建了分类变量“class_category”，揭示了不同类班级成绩分布上的差别。<br/>
+2.在进行相关性分析的时候，引入学生的评级，揭示出了不同评级下的学生科目成绩间的相关性是有所差异的。
+    
